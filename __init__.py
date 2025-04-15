@@ -67,7 +67,7 @@ def main():
 					time.sleep(1.0)
 			parser.set_data(data)
 
-		for student in range(max(conf.start_student, 1), 4):
+		for student in range(1, 4):
 			# get next student
 			if student != 1:
 				data["__EVENTTARGET"] = "ctl00$MainContent$dropStudent"
