@@ -1,0 +1,14 @@
+{
+  "homework": "E1",
+  "cookies": {
+    "ASP.NET_SessionId": "1234567890abcdefghijklmn"
+  },
+  "score": {
+      "min": 100,
+      "max": 100
+  },
+  "remark": "请不要吝啬文字，评语至少5个字，但也不要乱写",
+  "start_question": 0,
+  "start_student": 0,
+  "log_level": "INFO"
+}

@@ -1,17 +1,15 @@
+import random
 import requests
 import time
 from requests import Response
+
+from config import Config
 from data_helper import *
 from html_parser import HTMLParser
 from logger import logger
 from status_code_helper import status_code_log
 
 url = "http://1024.se.scut.edu.cn/%E4%BD%9C%E4%B8%9A%E4%BA%92%E8%AF%84.aspx"
-
-cookies = {
-	"<Hm_cookie_name>": "<Hm_cookie>",
-	"ASP.NET_SessionId": "<your token>"
-}
 
 headers = {
 	"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -22,11 +20,14 @@ headers = {
 
 def main():
 	parser: HTMLParser = HTMLParser()
+	conf: Config = Config()
 
-	homework: str = "E1"
+	homework: str = conf.homework
+	cookies: dict = conf.cookies
+	logger.setLevel(conf.log_level)
 
 	# get first page
-	logger.info("Getting first page...")
+	logger.info("Getting first page of homework " + homework + "...")
 	first_page: Response = requests.get(url=url, cookies=cookies, headers=headers)
 	parser.feed(first_page.text)
 	first_page.close()
@@ -36,13 +37,12 @@ def main():
 		"__LASTFOCUS": "",
 		"ctl00$MainContent$dropTitleList": get_drop_title_list(homework, 1),
 		"ctl00$MainContent$dropStudent": get_drop_student(1),
-		"ctl00$MainContent$dropScore": "100",
-		"ctl00$MainContent$txtRemark": "请不要吝啬文字，评语至少5个字，但也不要乱写",
+		"ctl00$MainContent$txtRemark": conf.remark,
 	}
 
 	parser.set_data(data)
 
-	for question in range(1, 51):
+	for question in range(max(conf.start_question, 1), 51):
 		if question != 1:
 			# get next question
 			data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
@@ -57,17 +57,17 @@ def main():
 					parser.feed(next_question.text)
 					next_question.close()
 
-					status_code_log(status_code, "get next question")
+					status_code_log(status_code, "get question " + str(question))
 
 					if status_code != 200:
 						time.sleep(1.0)
 				except Exception as e:
-					logger.error("Failed to get next question, exception: " + str(e))
+					logger.error("Failed to get question " + str(question) + ", exception: " + str(e))
 					logger.info("Waiting for 1 second...")
 					time.sleep(1.0)
 			parser.set_data(data)
 
-		for student in range(1, 4):
+		for student in range(max(conf.start_student, 1), 4):
 			# get next student
 			if student != 1:
 				data["__EVENTTARGET"] = "ctl00$MainContent$dropStudent"
@@ -82,12 +82,12 @@ def main():
 						parser.feed(next_student.text)
 						next_student.close()
 
-						status_code_log(status_code, "get next student")
+						status_code_log(status_code, "get student " + str(student))
 
 						if status_code != 200:
 							time.sleep(1.0)
 					except Exception as e:
-						logger.error("Failed to get next student, exception: " + str(e))
+						logger.error("Failed to get student " + str(student) + ", exception: " + str(e))
 						logger.info("Waiting for 1 second...")
 						time.sleep(1.0)
 				parser.set_data(data)
@@ -96,6 +96,7 @@ def main():
 
 			# submit score
 			data["__EVENTTARGET"] = ""  # reset __EVENTTARGET
+			data["ctl00$MainContent$dropScore"] = random.randint(conf.score["min"], conf.score["max"])
 			data["ctl00$MainContent$btnScore"] = "提交"
 
 			status_code = 0
