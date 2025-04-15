@@ -1,0 +1,9 @@
+*.log
+.venv
+
+# IDE files
+.idea
+.vscode
+
+# Apple shit
+.DS_Store
