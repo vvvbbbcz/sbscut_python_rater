@@ -9,7 +9,7 @@ from html_parser import HTMLParser
 from logger import logger
 from status_code_helper import status_code_log
 
-url = "http://1024.se.scut.edu.cn/%E4%BD%9C%E4%B8%9A%E4%BA%92%E8%AF%84.aspx"
+url = "https://1024.se.scut.edu.cn/%E4%BD%9C%E4%B8%9A%E4%BA%92%E8%AF%84.aspx"
 
 headers = {
 	"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -35,15 +35,36 @@ def main():
 	data: dict = {
 		"__EVENTARGUMENT": "",
 		"__LASTFOCUS": "",
-		"ctl00$MainContent$dropTitleList": get_drop_title_list(homework, 1),
-		"ctl00$MainContent$dropStudent": get_drop_student(1),
-		"ctl00$MainContent$txtRemark": conf.remark,
 	}
 
 	parser.set_data(data)
 
-	for question in range(max(conf.start_question, 1), 51):
-		if question != 1:
+	# jump to first question
+	data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
+	data["ctl00$MainContent$dropTitleList"] = get_drop_title_list(homework, conf.start_question)
+	data["ctl00$MainContent$dropStudent"] = get_drop_student(conf.start_question)
+
+	status_code: int = 0
+	while status_code != 200:
+		try:
+			logger.info(f"Getting question {conf.start_question}...")
+			next_question: Response = requests.post(url=url, cookies=cookies, headers=headers, data=data)
+			status_code = next_question.status_code
+			parser.feed(next_question.text)
+			next_question.close()
+
+			status_code_log(status_code, f"get question {conf.start_question}")
+
+			if status_code != 200:
+				time.sleep(1.0)
+		except Exception as e:
+			logger.error(f"Failed to get question {conf.start_question}, exception: {e}")
+			logger.info("Waiting for 1 second...")
+			time.sleep(1.0)
+	parser.set_data(data)
+
+	for question in range(conf.start_question, 51):
+		if question != conf.start_question:
 			# get next question
 			data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
 			data["ctl00$MainContent$dropTitleList"] = get_drop_title_list(homework, question)
@@ -98,6 +119,7 @@ def main():
 			data["__EVENTTARGET"] = ""  # reset __EVENTTARGET
 			data["ctl00$MainContent$dropScore"] = random.randint(conf.score["min"], conf.score["max"])
 			data["ctl00$MainContent$btnScore"] = "提交"
+			data["ctl00$MainContent$txtRemark"] = conf.remark
 
 			status_code = 0
 			while status_code != 200:
@@ -118,6 +140,7 @@ def main():
 			# set data
 			parser.set_data(data)
 			data.pop("ctl00$MainContent$btnScore") # unset btnScore
+			data.pop("ctl00$MainContent$txtRemark") # unset txtRemark
 
 if __name__ == '__main__':
 	main()
