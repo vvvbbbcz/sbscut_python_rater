@@ -27,7 +27,7 @@ def main():
 	logger.setLevel(conf.log_level)
 
 	# get first page
-	logger.info("Getting first page of homework " + homework + "...")
+	logger.info(f"Getting first page of homework {homework}...")
 	first_page: Response = requests.get(url=url, cookies=cookies, headers=headers)
 	parser.feed(first_page.text)
 	first_page.close()
@@ -42,7 +42,7 @@ def main():
 	# jump to first question
 	data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
 	data["ctl00$MainContent$dropTitleList"] = get_drop_title_list(homework, conf.start_question)
-	data["ctl00$MainContent$dropStudent"] = get_drop_student(conf.start_question)
+	data["ctl00$MainContent$dropStudent"] = get_drop_student(1)
 
 	status_code: int = 0
 	while status_code != 200:
