@@ -1,4 +1,4 @@
-from logger import logger
+from sbscut.logger import logger
 
 def status_code_log(status_code: int, dth: str) -> None:
 	if status_code == 302:

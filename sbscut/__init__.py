@@ -3,11 +3,11 @@ import requests
 import time
 from requests import Response
 
-from config import Config
-from data_helper import *
-from html_parser import HTMLParser
-from logger import logger
-from status_code_helper import status_code_log
+from sbscut.config import Config
+from sbscut.data_helper import *
+from sbscut.html_parser import HTMLParser
+from sbscut.logger import logger, init_logger
+from sbscut.status_code_helper import status_code_log
 
 url = "https://1024.se.scut.edu.cn/%E4%BD%9C%E4%B8%9A%E4%BA%92%E8%AF%84.aspx"
 
@@ -24,7 +24,7 @@ def main():
 
 	homework: str = conf.homework
 	cookies: dict = conf.cookies
-	logger.setLevel(conf.log_level)
+	init_logger(conf.log_level)
 
 	# get first page
 	logger.info(f"Getting first page of homework {homework}...")

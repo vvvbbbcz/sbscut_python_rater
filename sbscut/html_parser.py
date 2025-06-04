@@ -1,5 +1,5 @@
 import html.parser
-from logger import logger
+from sbscut.logger import logger
 
 class HTMLParser(html.parser.HTMLParser):
 	def __init__(self):

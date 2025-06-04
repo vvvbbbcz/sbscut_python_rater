@@ -2,7 +2,7 @@ import json
 
 class Config:
 	def __init__(self):
-		config_file = open("config.json", "r")
+		config_file = open("./config.json", "r")
 		config_dict: dict = json.load(config_file)
 		config_file.close()
 

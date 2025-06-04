@@ -8,3 +8,5 @@ config.json
 
 # Apple shit
 .DS_Store
+
+logs
