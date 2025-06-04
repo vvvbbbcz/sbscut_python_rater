@@ -14,7 +14,7 @@ def init_logger(level=logging.INFO):
 
 	date_fmt = "%Y-%m-%d %H:%M:%S"
 	fmt = logging.Formatter(
-		'[%(asctime)s][%(levelname)s][%(processName)s][%(name)s][%(filename)s:%(lineno)d] %(message)s',
+		'[%(asctime)s][%(levelname)s][%(filename)s:%(lineno)d] %(message)s',
 		datefmt=date_fmt)
 
 	file_handler = RotatingFileHandler(_logfile, 'a', 65536, 10)
