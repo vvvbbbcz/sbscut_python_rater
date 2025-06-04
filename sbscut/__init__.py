@@ -5,6 +5,7 @@ from requests import Response
 
 from sbscut.config import Config
 from sbscut.data_helper import *
+from sbscut.get_page import post, submit
 from sbscut.html_parser import HTMLParser
 from sbscut.logger import logger, init_logger
 from sbscut.status_code_helper import status_code_log
@@ -17,6 +18,7 @@ headers = {
 	# "Content-Type": "multipart/form-data",
 	"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36 Edg/135.0.0.0"
 }
+
 
 def main():
 	parser: HTMLParser = HTMLParser()
@@ -43,75 +45,21 @@ def main():
 	data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
 	data["ctl00$MainContent$dropTitleList"] = get_drop_title_list(homework, conf.start_question)
 	data["ctl00$MainContent$dropStudent"] = get_drop_student(1)
-
-	status_code: int = 0
-	while status_code != 200:
-		try:
-			logger.info(f"Getting question {conf.start_question}...")
-			next_question: Response = requests.post(url=url, cookies=cookies, headers=headers, data=data)
-			status_code = next_question.status_code
-			parser.feed(next_question.text)
-			next_question.close()
-
-			status_code_log(status_code, f"get question {conf.start_question}")
-
-			if status_code != 200:
-				time.sleep(1.0)
-		except Exception as e:
-			logger.error(f"Failed to get question {conf.start_question}, exception: {e}")
-			logger.info("Waiting for 1 second...")
-			time.sleep(1.0)
-	parser.set_data(data)
+	data = post(url, cookies, data, headers, parser, conf.start_question, 1)
 
 	for question in range(conf.start_question, 51):
 		if question != conf.start_question:
 			# get next question
 			data["__EVENTTARGET"] = "ctl00$MainContent$dropTitleList"
 			data["ctl00$MainContent$dropTitleList"] = get_drop_title_list(homework, question)
-
-			status_code: int = 0
-			while status_code != 200:
-				try:
-					logger.info("Getting question " + str(question) + "...")
-					next_question: Response = requests.post(url=url, cookies=cookies, headers=headers, data=data)
-					status_code = next_question.status_code
-					parser.feed(next_question.text)
-					next_question.close()
-
-					status_code_log(status_code, "get question " + str(question))
-
-					if status_code != 200:
-						time.sleep(1.0)
-				except Exception as e:
-					logger.error("Failed to get question " + str(question) + ", exception: " + str(e))
-					logger.info("Waiting for 1 second...")
-					time.sleep(1.0)
-			parser.set_data(data)
+			data = post(url, cookies, data, headers, parser, question, 1)
 
 		for student in range(1, 4):
 			# get next student
 			if student != 1:
 				data["__EVENTTARGET"] = "ctl00$MainContent$dropStudent"
 				data["ctl00$MainContent$dropStudent"] = get_drop_student(student)
-
-				status_code: int = 0
-				while status_code != 200:
-					try:
-						logger.info("Getting student " + str(student) + "...")
-						next_student: Response = requests.post(url=url, cookies=cookies, headers=headers, data=data)
-						status_code = next_student.status_code
-						parser.feed(next_student.text)
-						next_student.close()
-
-						status_code_log(status_code, "get student " + str(student))
-
-						if status_code != 200:
-							time.sleep(1.0)
-					except Exception as e:
-						logger.error("Failed to get student " + str(student) + ", exception: " + str(e))
-						logger.info("Waiting for 1 second...")
-						time.sleep(1.0)
-				parser.set_data(data)
+				data = post(url, cookies, data, headers, parser, question, student)
 			else:
 				data["ctl00$MainContent$dropStudent"] = get_drop_student(student)
 
@@ -121,26 +69,10 @@ def main():
 			data["ctl00$MainContent$btnScore"] = "提交"
 			data["ctl00$MainContent$txtRemark"] = conf.remark
 
-			status_code = 0
-			while status_code != 200:
-				try:
-					logger.info("Submitting score...")
-					score: Response = requests.post(url=url, cookies=cookies, headers=headers, data=data)
-					status_code = score.status_code
-					parser.feed(score.text)
-					score.close()
+			data = submit(url, cookies, data, headers, parser)
+			data.pop("ctl00$MainContent$btnScore")  # unset btnScore
+			data.pop("ctl00$MainContent$txtRemark")  # unset txtRemark
 
-					status_code_log(status_code, "submit score")
-
-					logger.info("Waiting for 15 seconds...")
-					time.sleep(15.0)
-				except Exception as e:
-					logger.error("Failed to submit score, exception: " + str(e))
-
-			# set data
-			parser.set_data(data)
-			data.pop("ctl00$MainContent$btnScore") # unset btnScore
-			data.pop("ctl00$MainContent$txtRemark") # unset txtRemark
 
 if __name__ == '__main__':
 	main()
